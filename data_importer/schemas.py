@@ -1,49 +1,33 @@
-# data_importer/schemas.py
 from pydantic import BaseModel, Field
 from typing import Optional
 
-# Schema para a Região (usado dentro do schema de Estado)
-class RegionSchema(BaseModel):
-    id: int
-    nome: str
-    sigla: str
-
-# Schema principal para os dados de um Estado
-class StateSchema(BaseModel):
-    id: int
-    nome: str
-    sigla: str
-    regiao: RegionSchema
-
-# Schemas aninhados para os dados de um Município
-class UFSchema(BaseModel):
+class FullRegionSchema(BaseModel):
     id: int
     sigla: str
     nome: str
-    regiao: RegionSchema
 
-class MesorregiaoSchema(BaseModel):
+class FullUFSchema(BaseModel):
+    id: int
+    sigla: str
+    nome: str
+    regiao: FullRegionSchema
+
+class FullMesorregiaoSchema(BaseModel):
     id: int
     nome: str
-    UF: UFSchema
+    UF: FullUFSchema
 
-class MicrorregiaoSchema(BaseModel):
+class FullMicrorregiaoSchema(BaseModel):
     id: int
     nome: str
-    mesorregiao: MesorregiaoSchema
+    mesorregiao: FullMesorregiaoSchema
 
-# Schema principal para os dados de um Município
-class MunicipalitySchema(BaseModel):
+class FullMunicipioSchema(BaseModel):
     id: int
     nome: str
-    microrregiao: MicrorregiaoSchema = Field(alias='microrregiao')
+    microrregiao: Optional[FullMicrorregiaoSchema] = None
 
-# Schemas para os dados de um Distrito
-class MunicipalityRefSchema(BaseModel):
-    id: int
-
-# Schema principal para os dados de um Distrito
-class DistrictSchema(BaseModel):
+class FullDistrictSchema(BaseModel):
     id: int
     nome: str
-    municipio: MunicipalityRefSchema
+    municipio: FullMunicipioSchema
