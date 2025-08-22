@@ -1,67 +1,84 @@
 # data_importer/tests.py
 from django.test import TestCase
-from unittest.mock import patch, MagicMock
-from requests.exceptions import RequestException
+import pandas as pd
+from decimal import Decimal
 
-from .services import IBGEApiClient
-from .schemas import StateSchema
+# Importa o comando que queremos testar e o modelo
+from data_importer.management.commands.populate_companies import Command as PopulateCompaniesCommand
+from data_importer.models import Company
 
-class IBGEApiClientTests(TestCase):
-    #Testes para o IBGEApiClient, focando na logica de requisicao e validacao de dados, sem fazer chamadas de rede reais
+class PopulateCompaniesCommandTests(TestCase):
+    """
+    Testes para o comando populate_companies, focando na lógica de
+    processamento de chunks (criação e atualização de dados).
+    """
 
     def setUp(self):
-        #Configuracao inicial para cada teste.
-        self.client = IBGEApiClient()
+        """Prepara o comando para ser usado nos testes."""
+        self.command = PopulateCompaniesCommand()
 
-    @patch('data_importer.services.requests.get')
-    def test_get_states_success(self, mock_get):
-        #Testa se o cliente processa corretamente uma resposta bem sucedida da API.
-        
-        #Cria uma resposta JSON de exemplo, como a que a API do IBGE retornaria.
-        mock_api_response = [
-            {
-                "id": 11,
-                "sigla": "RO",
-                "nome": "Rondônia",
-                "regiao": {"id": 1, "sigla": "N", "nome": "Norte"}
-            },
-            {
-                "id": 12,
-                "sigla": "AC",
-                "nome": "Acre",
-                "regiao": {"id": 1, "sigla": "N", "nome": "Norte"}
-            }
-        ]
+    def test_process_chunk_creates_new_companies(self):
+        """
+        Verifica se o process_chunk cria novas empresas quando a base de dados está vazia.
+        """
+        # 1. PREPARAÇÃO (Arrange)
+        # Cria um DataFrame do pandas em memória, simulando um chunk do CSV.
+        data = {
+            'cnpj': ['11111111', '22222222'],
+            'razao_social': ['EMPRESA A LTDA', 'EMPRESA B SA'],
+            'natureza_juridica': ['2062', '2054'],
+            'qualificacao_responsavel': ['49', '10'],
+            'capital_social': ['1000,00', '2500,50'],
+            'porte_empresa': ['01', '03'],
+            'ente_federativo_responsavel': ['', ''],
+        }
+        chunk = pd.DataFrame(data)
 
-        #Configura o  "mock" para simular a API
-        #Quando 'requests.get' for chamado, ele retorna esse objeto
-        mock_response = MagicMock()
-        mock_response.json.return_value = mock_api_response
-        mock_response.raise_for_status.return_value = None  #Simula uma resposta HTTP 200 OK
-        mock_get.return_value = mock_response
+        # 2. AÇÃO (Act)
+        # Chama o método que queremos testar.
+        self.command.process_chunk(chunk)
 
-        #Chama o metodo que quer testar
-        states = self.client.get_states()
+        # 3. VERIFICAÇÃO (Assert)
+        # Verifica se as empresas foram criadas corretamente na base de dados.
+        self.assertEqual(Company.objects.count(), 2)
+        empresa_a = Company.objects.get(cnpj='11111111')
+        self.assertEqual(empresa_a.razao_social, 'EMPRESA A LTDA')
+        self.assertEqual(empresa_a.capital_social, Decimal('1000.00'))
 
-        #Verifica se o resultado é o esperado
-        self.assertEqual(len(states), 2)
-        self.assertIsInstance(states[0], StateSchema)
-        self.assertEqual(states[0].nome, "Rondônia")
-        self.assertEqual(states[1].sigla, "AC")
-        
-        #Verifica se a URL correta foi chamada
-        mock_get.assert_called_once_with(
-            "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome",
-            timeout=20
+    def test_process_chunk_updates_existing_companies(self):
+        """
+        Verifica se o process_chunk atualiza empresas existentes.
+        """
+        # 1. PREPARAÇÃO (Arrange)
+        # Cria uma empresa preexistente na base de dados.
+        Company.objects.create(
+            cnpj='11111111',
+            razao_social='NOME ANTIGO',
+            natureza_juridica='0000',
+            qualificacao_responsavel='00',
+            capital_social=Decimal('1.00'),
+            porte_empresa='00'
         )
+        # Prepara um chunk com os mesmos CNPJs, mas com dados atualizados.
+        data = {
+            'cnpj': ['11111111'],
+            'razao_social': ['NOME NOVO ATUALIZADO'],
+            'natureza_juridica': ['2062',],
+            'qualificacao_responsavel': ['49',],
+            'capital_social': ['5000,00',],
+            'porte_empresa': ['05',],
+            'ente_federativo_responsavel': ['GOVERNO FEDERAL',],
+        }
+        chunk = pd.DataFrame(data)
 
-    @patch('data_importer.services.requests.get')
-    def test_get_states_http_error(self, mock_get):
+        # 2. AÇÃO (Act)
+        self.command.process_chunk(chunk)
 
-        #Testa como o cliente se comporta quando a API retorna um erro HTTP
-        #Configura o mock para simular um erro de rede
-
-        mock_get.side_effect = RequestException("Erro de conexão simulado")
-
-        with self.assertRaises(RequestException):
-            self.client.get_states()
+        # 3. VERIFICAÇÃO (Assert)
+        # Garante que nenhuma nova empresa foi criada.
+        self.assertEqual(Company.objects.count(), 1)
+        # Obtém a empresa atualizada e verifica se os campos foram alterados.
+        empresa_atualizada = Company.objects.get(cnpj='11111111')
+        self.assertEqual(empresa_atualizada.razao_social, 'NOME NOVO ATUALIZADO')
+        self.assertEqual(empresa_atualizada.capital_social, Decimal('5000.00'))
+        self.assertEqual(empresa_atualizada.porte_empresa, '05')

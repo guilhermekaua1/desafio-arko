@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Region, State, Municipality, District
+from .models import Region, State, Municipality, District, Company
 
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
@@ -27,3 +27,9 @@ class DistrictAdmin(admin.ModelAdmin):
     @admin.display(description='Estado', ordering='municipality__state')
     def get_state(self, obj):
         return obj.municipality.state.acronym
+
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('cnpj', 'razao_social', 'porte_empresa', 'capital_social')
+    search_fields = ('cnpj', 'razao_social')
+    list_filter = ('porte_empresa',)
