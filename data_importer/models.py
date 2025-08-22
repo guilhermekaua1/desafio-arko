@@ -67,3 +67,32 @@ class District(models.Model):
 
     def __str__(self):
         return self.name
+
+#models do company 
+class Company(models.Model):
+    # O CNPJ básico (8 primeiros dígitos) vai ser a chave primaria
+    cnpj = models.CharField("CNPJ Básico", max_length=8, primary_key=True)
+    razao_social = models.CharField(
+        "Razão Social", max_length=255, db_index=True
+    )
+    natureza_juridica = models.CharField("Natureza Jurídica", max_length=4)
+    qualificacao_responsavel = models.CharField(
+        "Qualificação do Responsável", max_length=2
+    )
+    capital_social = models.DecimalField(
+        "Capital Social", max_digits=16, decimal_places=2
+    )
+    porte_empresa = models.CharField(
+        "Porte da Empresa", max_length=2, null=True, blank=True
+    )
+    ente_federativo_responsavel = models.CharField(
+        "Ente Federativo Responsável", max_length=255, null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Empresa"
+        verbose_name_plural = "Empresas"
+        ordering = ['razao_social']
+
+    def __str__(self):
+        return self.razao_social
