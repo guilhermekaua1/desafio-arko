@@ -1,0 +1,60 @@
+{% extends 'data_importer/base.html' %}
+
+{% block title %}Listagem de Empresas{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Filtrar Empresas</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="{{ filter.form.razao_social.id_for_label }}" class="form-label">{{ filter.form.razao_social.label }}</label>
+                {{ filter.form.razao_social }}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ filter.form.porte_empresa.id_for_label }}" class="form-label">{{ filter.form.porte_empresa.label }}</label>
+                {{ filter.form.porte_empresa }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>CNPJ</th>
+                        <th>Razão Social</th>
+                        <th>Porte</th>
+                        <th class="text-end">Capital Social</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
+                    <tr>
+                        <td>{{ company.cnpj }}</td>
+                        <td>{{ company.razao_social }}</td>
+                        <td>{{ company.porte_empresa }}</td>
+                        <td class="text-end">R$ {{ company.capital_social|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4">Nenhuma empresa encontrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        {% include "data_importer/partials/pagination.html" %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'data_importer/base.html' %}
+
+{% block title %}Listagem de Estados{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Filtrar Estados</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label for="{{ filter.form.name.id_for_label }}" class="form-label">{{ filter.form.name.label }}</label>
+                {{ filter.form.name }}
+            </div>
+            <div class="col-md-5">
+                <label for="{{ filter.form.region.id_for_label }}" class="form-label">{{ filter.form.region.label }}</label>
+                {{ filter.form.region }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Sigla</th>
+                        <th>Região</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for state in states %}
+                    <tr>
+                        <td>{{ state.id }}</td>
+                        <td>{{ state.name }}</td>
+                        <td>{{ state.acronym }}</td>
+                        <td>{{ state.region.name }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4">Nenhum estado encontrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        {% include "data_importer/partials/pagination.html" %}
+    </div>
+</div>
+{% endblock %}

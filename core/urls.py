@@ -14,9 +14,21 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.views.generic import RedirectView
 
 urlpatterns = [
+    # Redireciona a página inicial (raiz) diretamente para a página de login
+    path('', RedirectView.as_view(pattern_name='login', permanent=False)),
+
+    # URLs do painel de administração
     path('admin/', admin.site.urls),
+
+    # Inclui as URLs de autenticação do Django (login, logout, etc.)
+    path('accounts/', include('django.contrib.auth.urls')),
+
+    # Inclui todas as URLs da nossa aplicação sob o prefixo 'app/'
+    path('app/', include('data_importer.urls', namespace='data_importer')),
 ]
