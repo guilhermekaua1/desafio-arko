@@ -57,7 +57,6 @@ cd desafio-arko
 O projeto utiliza um ficheiro `.env` para gerir as configurações.
 
 ```bash
-# Copie o ficheiro de exemplo para criar o seu ficheiro .env local
 cp .env.example .env
 ```
 **Importante:** Abra o ficheiro `.env` e gere uma nova `SECRET_KEY` para o Django. Pode usar o comando abaixo (com Python instalado na sua máquina) para gerar uma:
@@ -66,7 +65,7 @@ python3 -c 'from django.core.management.utils import get_random_secret_key; prin
 ```
 Cole a chave gerada no seu ficheiro `.env`.
 
-### 3. Construir e Iniciar os Contentores
+### 3. Construir e Iniciar os Containers
 Este comando irá construir a imagem da aplicação Django e iniciar os serviços da web e da base de dados.
 ```bash
 docker-compose up --build -d
@@ -78,18 +77,36 @@ Com os contentores em execução, aplique as migrações para criar todas as tab
 docker-compose exec web python manage.py migrate
 ```
 
-### 5. Executar as Rotinas de Importação de Dados
-Os dados são importados através de comandos de gestão customizados.
+### 5. Acessar à Aplicação
+Para poder fazer login, crie primeiro um superutilizador:
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+Siga as instruções para definir um nome de utilizador, e-mail e senha.
 
-**a. Importar Dados do IBGE (Estados, Municípios, etc.):**
+### 6. Executar as Rotinas de Importação de Dados
+
+Para uma base de dados completa, recomenda-se executar os três comandos abaixo.
+
+**a. Importador Otimizado do IBGE (Rápido):**
+Este comando utiliza uma estratégia otimizada, fazendo uma única chamada ao endpoint de `distritos` da API do IBGE para popular a maioria das entidades.
+
 ```bash
 docker-compose exec web python manage.py importer
 ```
 
-**b. Importar Dados das Empresas (Receita Federal):**
-Este comando irá primeiro descarregar um ficheiro de ~400MB zipado (pode demorar) e depois processar mais de 22 milhões de linhas. **Este processo é longo e pode levar de 10 a 30 minutos.**
+**b. Importador Completo do IBGE (Garantia de Integridade):**
+Este comando busca os dados de cada entidade (Estados, Municípios) em endpoints separados. É mais lento, mas serve como rotina complementar para garantir que mesmo os municípios que não tenham distritos registados na API sejam importados.
 ```bash
-docker-compose exec web python manage.py populate_companies [https://arquivos.receitafederal.gov.br/dados/cnpj/dados_abertos_cnpj/2025-05/Empresas0.zip](https://arquivos.receitafederal.gov.br/dados/cnpj/dados_abertos_cnpj/2025-05/Empresas0.zip)
+docker-compose exec web python manage.py populate_ibge
+```
+
+**c. Importador de Empresas (Receita Federal via S3):**
+Este comando descarrega e processa o ficheiro de dados de empresas.
+*Nota: Para garantir uma importação rápida e estável para a avaliação, o ficheiro ZIP original da Receita Federal (~400MB) foi previamente alojado num bucket Amazon S3 de alta velocidade. O comando abaixo utiliza esta fonte otimizada.*
+**O download deverá ser quase instantâneo, mas o processamento das mais de 22 milhões de linhas ainda pode levar de 10 a 30 minutos.**
+```bash
+docker-compose exec web python manage.py populate_companies [https://desafio-arko-empresas-final.s3.us-east-1.amazonaws.com/Empresas0.zip](https://desafio-arko-empresas-final.s3.us-east-1.amazonaws.com/Empresas0.zip)
 ```
 
 ### 6. Como Testar o Projeto
@@ -98,12 +115,33 @@ O projeto inclui testes unitários para a lógica de importação de empresas. P
 docker-compose exec web python manage.py test data_importer
 ```
 
+## ⚡ Execução Alternativa (sem Docker)
+
+Para executar o projeto localmente sem Docker, será necessário ter o Python 3.11+ e o PostgreSQL instalados na sua máquina.
+
+1.  **Crie e ative um ambiente virtual:**
+    ```bash
+    python3 -m venv .venv
+    source venv/bin/activate  # Linux/macOS
+    venv\Scripts\activate      # Windows
+    ```
+2.  **Instale as dependências:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **Configure as variáveis de ambiente:** Crie um ficheiro `.env` (a partir do `.env.example`) e ajuste as variáveis da base de dados (`DB_HOST`, `DB_PORT`, etc.) para corresponderem à sua instalação local do PostgreSQL.
+4.  **Execute as migrações e os comandos de importação:**
+    ```bash
+    python manage.py migrate
+    python manage.py importer
+    python manage.py populate_companies https://desafio-arko-empresas-final.s3.us-east-1.amazonaws.com/Empresas0.zip
+    ```
+5.  **Inicie o servidor:**
+    ```bash
+    python manage.py runserver
+    ```
+
 ### 7. Acessar à Aplicação
-Para poder fazer login, crie primeiro um superutilizador:
-```bash
-docker-compose exec web python manage.py createsuperuser
-```
-Siga as instruções para definir um nome de utilizador, e-mail e senha.
 
 **a. Acessar às Páginas Web (Tarefa 3):**
 * Aceda a **http://localhost:8000/**
@@ -113,3 +151,12 @@ Siga as instruções para definir um nome de utilizador, e-mail e senha.
 **b. Acessar ao Django Admin:**
 * Aceda a **http://localhost:8000/admin/**
 * Use as mesmas credenciais para ver a área de gestão de dados.
+
+## 🔌 Acessar à Base de Dados Diretamente
+
+A base de dados do PostgreSQL dentro do contentor está exposta na porta `5432` da sua máquina local (`localhost`). Pode usar uma ferramenta como DBeaver, Postico ou pgAdmin para se conectar a ela com as seguintes credenciais (do ficheiro `.env`):
+* **Host:** `localhost`
+* **Porta:** `5432`
+* **Utilizador:** `arko_user` (ou o que estiver no seu `.env`)
+* **Senha:** `supersecretpassword` (ou o que estiver no seu `.env`)
+* **Base de Dados:** `arko_db` (ou o que estiver no seu `.env`)
