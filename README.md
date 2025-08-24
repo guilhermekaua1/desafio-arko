@@ -144,12 +144,12 @@ Para executar o projeto localmente sem Docker, será necessário ter o Python 3.
 ### 7. Acessar à Aplicação
 
 **a. Acessar às Páginas Web (Tarefa 3):**
-* Aceda a **http://localhost:8000/**
+* Acesse **http://localhost:8000/**
 * Faça login com as credenciais que acabou de criar.
 * Você será redirecionado para a lista de estados e poderá navegar por todas as páginas da aplicação.
 
 **b. Acessar ao Django Admin:**
-* Aceda a **http://localhost:8000/admin/**
+* Acesse a **http://localhost:8000/admin/**
 * Use as mesmas credenciais para ver a área de gestão de dados.
 
 ## 🔌 Acessar à Base de Dados Diretamente
