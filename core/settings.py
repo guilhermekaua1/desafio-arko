@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os 
 import environ
+import dj_database_url 
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -31,9 +33,20 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+# O Heroku define a variável NODE_ENV para 'production', então podemos usá-la
+# para garantir que o DEBUG seja False em produção.
+IS_HEROKU_APP = "DYNO" in os.environ
+if IS_HEROKU_APP:
+    DEBUG = False
+else:
+    DEBUG = env('DEBUG')
+
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+# Adiciona o URL da aplicação Heroku à lista de hosts permitidos, se existir.
+if 'HEROKU_APP_NAME' in os.environ:
+    ALLOWED_HOSTS.append(f"{os.environ.get('HEROKU_APP_NAME')}.herokuapp.com")
 
 
 # Application definition
@@ -51,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,6 +97,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Configuração padrão para o ambiente local (Docker)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -94,23 +109,20 @@ DATABASES = {
     }
 }
 
+# Se a variável DATABASE_URL existir (definida pelo Heroku),
+# ela irá sobrescrever a configuração da base de dados.
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default'].update(dj_database_url.config(conn_max_age=600, ssl_require=True))
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    { 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    { 'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    { 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
 
@@ -118,11 +130,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'pt-br'
-
 TIME_ZONE = 'America/Sao_Paulo'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -130,6 +139,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# O diretório para onde o `collectstatic` irá copiar os ficheiros estáticos para o deploy.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# Configuração do Whitenoise para servir ficheiros estáticos de forma eficiente em produção.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -139,4 +153,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Configuração de Autenticação
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'data_importer:state_list' 
-LOGOUT_REDIRECT_URL = 'login' 
+LOGOUT_REDIRECT_URL = 'login'

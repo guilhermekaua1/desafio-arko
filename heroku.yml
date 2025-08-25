@@ -1,0 +1,6 @@
+# heroku.yml
+build:
+  docker:
+    web: Dockerfile
+run:
+  web: gunicorn core.wsgi --workers 4 --threads 4 --worker-connections 1000 --timeout 60
