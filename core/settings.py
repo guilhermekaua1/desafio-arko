@@ -99,20 +99,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Configuração padrão para o ambiente local (Docker)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASS'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
-    }
+    'default': dj_database_url.config(),
 }
-
-# Se a variável DATABASE_URL existir (definida pelo Heroku),
-# ela irá sobrescrever a configuração da base de dados.
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'].update(dj_database_url.config(conn_max_age=600, ssl_require=True))
 
 
 # Password validation
