@@ -42,13 +42,8 @@ else:
     DEBUG = env('DEBUG')
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# Adiciona o URL da aplicação Heroku à lista de hosts permitidos, se existir.
-# O Heroku define a variável HEROKU_HOSTNAME automaticamente.
-HEROKU_HOSTNAME = os.environ.get('HEROKU_HOSTNAME')
-if HEROKU_HOSTNAME:
-    ALLOWED_HOSTS.append(HEROKU_HOSTNAME)
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 
 # Application definition
