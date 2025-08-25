@@ -45,8 +45,10 @@ else:
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Adiciona o URL da aplicação Heroku à lista de hosts permitidos, se existir.
-if 'HEROKU_APP_NAME' in os.environ:
-    ALLOWED_HOSTS.append(f"{os.environ.get('HEROKU_APP_NAME')}.herokuapp.com")
+# O Heroku define a variável HEROKU_HOSTNAME automaticamente.
+HEROKU_HOSTNAME = os.environ.get('HEROKU_HOSTNAME')
+if HEROKU_HOSTNAME:
+    ALLOWED_HOSTS.append(HEROKU_HOSTNAME)
 
 
 # Application definition

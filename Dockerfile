@@ -15,7 +15,6 @@ RUN pip install -r requirements.txt
 # Copiar todo o código do projeto para o diretório de trabalho
 COPY . .
 
-ENV SECRET_KEY=secret
 ENV PORT=8000
 
 RUN python manage.py collectstatic --noinput
