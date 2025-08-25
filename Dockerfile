@@ -17,6 +17,9 @@ COPY . .
 
 ENV PORT=8000
 
+ENV SECRET_KEY=temporary-build-secret-key
+
+
 RUN python manage.py collectstatic --noinput
 
 
