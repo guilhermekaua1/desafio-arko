@@ -2,5 +2,9 @@
 build:
   docker:
     web: Dockerfile
+release:
+  image: web
+  command:
+    - ./manage.py migrate
 run:
-  web: gunicorn core.wsgi --workers 4 --threads 4 --worker-connections 1000 --timeout 60
+  web: gunicorn core.wsgi
