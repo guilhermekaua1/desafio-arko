@@ -14,3 +14,5 @@ RUN pip install -r requirements.txt
 
 # Copiar todo o código do projeto para o diretório de trabalho
 COPY . .
+
+RUN python manage.py collectstatic --noinput
