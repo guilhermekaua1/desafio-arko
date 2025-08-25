@@ -45,6 +45,19 @@ else:
 
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
+# CONFIGURAÇÕES DE SEGURANÇA PARA PRODUÇÃO (HEROKU)
+if IS_HEROKU_APP:
+    # Confia na origem do nosso site para pedidos seguros (POST, como o login)
+    app_host = env('DJANGO_ALLOWED_HOSTS')
+    CSRF_TRUSTED_ORIGINS = [f'https://{app_host}']
+
+    # Permite que o Django reconheça que está por trás de um proxy seguro (essencial no Heroku)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # Força o uso de cookies seguros (apenas sobre HTTPS)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
 
 # Application definition
 
