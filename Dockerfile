@@ -16,5 +16,9 @@ RUN pip install -r requirements.txt
 COPY . .
 
 ENV SECRET_KEY=secret
+ENV PORT=8000
 
 RUN python manage.py collectstatic --noinput
+
+
+CMD gunicorn core.wsgi:application --bind 0.0.0.0:$PORT
