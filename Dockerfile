@@ -15,4 +15,6 @@ RUN pip install -r requirements.txt
 # Copiar todo o código do projeto para o diretório de trabalho
 COPY . .
 
+ENV SECRET_KEY=secret
+
 RUN python manage.py collectstatic --noinput
